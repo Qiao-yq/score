@@ -1,0 +1,124 @@
+{
+  "rubricVersion": "poc-uncalibrated",
+  "schemaVersion": "1.0",
+  "scoreScale": { "min": 0, "max": 100, "integer": true },
+  "totalMax": 100,
+  "rounding": { "decimals": 1 },
+  "dimensions": [
+    {
+      "key": "submit_speed",
+      "name": "提交速度",
+      "weight": 0.10,
+      "source": "system",
+      "editable": false,
+      "aggregation": "auto",
+      "rule": {
+        "onTime": 100,
+        "lateWithin1h": 80,
+        "late1to24h": 50,
+        "late24to72h": 20,
+        "lateOver72h": 0
+      }
+    },
+    {
+      "key": "report_quality",
+      "name": "报告质量",
+      "weight": 0.30,
+      "source": "agent",
+      "aggregation": "sum_to_100",
+      "subItems": [
+        { "key": "completeness", "name": "完整性", "min": 0, "max": 10 },
+        { "key": "accuracy", "name": "准确性", "min": 0, "max": 10 },
+        { "key": "executability", "name": "可执行性", "min": 0, "max": 10 }
+      ]
+    },
+    {
+      "key": "interaction_visual",
+      "name": "交互视觉",
+      "weight": 0.20,
+      "source": "agent",
+      "aggregation": "average",
+      "subItems": [
+        { "key": "prototype", "name": "原型", "min": 0, "max": 100, "weight": 0.25 },
+        { "key": "layout", "name": "布局", "min": 0, "max": 100, "weight": 0.25 },
+        { "key": "color", "name": "色彩", "min": 0, "max": 100, "weight": 0.25 },
+        { "key": "refinement", "name": "精致度", "min": 0, "max": 100, "weight": 0.25 }
+      ]
+    },
+    {
+      "key": "function_experience",
+      "name": "功能体验",
+      "weight": 0.15,
+      "source": "agent",
+      "aggregation": "average",
+      "maxScoreWhenInconsistent": 60,
+      "subItems": [
+        { "key": "completeness", "name": "完整度", "min": 0, "max": 100, "weight": 0.3333 },
+        { "key": "smoothness", "name": "流畅度", "min": 0, "max": 100, "weight": 0.3333 },
+        { "key": "button_clarity", "name": "按钮辨识度", "min": 0, "max": 100, "weight": 0.3334 }
+      ]
+    },
+    {
+      "key": "tech_performance",
+      "name": "技术性能",
+      "weight": 0.10,
+      "source": "agent",
+      "aggregation": "weighted",
+      "subItems": [
+        { "key": "runtime_efficiency", "name": "运行效率", "min": 0, "max": 100, "weight": 0.5 },
+        { "key": "load_speed", "name": "加载速度", "min": 0, "max": 100, "weight": 0.5 }
+      ]
+    },
+    {
+      "key": "presentation",
+      "name": "演示效果",
+      "weight": 0.10,
+      "source": "agent",
+      "aggregation": "weighted",
+      "subItems": [
+        { "key": "expressiveness", "name": "表现力", "min": 0, "max": 100, "weight": 0.5 },
+        { "key": "defense_quality", "name": "答辩质量", "min": 0, "max": 100, "weight": 0.5 }
+      ]
+    },
+    {
+      "key": "peer_review",
+      "name": "团队互评",
+      "weight": 0.05,
+      "source": "nopush",
+      "aggregation": "auto",
+      "maxScore": 5,
+      "rule": "有效互评得分 = 收到的有效队长评分 / 100 × 5，四舍五入到 1 位"
+    }
+  ],
+  "synthesis": {
+    "agentWeight": 0.70,
+    "teacherWeight": 0.30,
+    "formula": "维度合成分 = Agent分 × 70% + 教师分 × 30%；最终分 = Σ(前六维合成分 × 权重) + NO Push 互评得分"
+  },
+  "thresholds": {
+    "minConfidence": 0.70,
+    "diffReview": 20,
+    "modifyRatio": 0.20,
+    "calibrated": false,
+    "calibrationNote": "临时常数，待 M0.5b 标定后写入正式 rubricVersion"
+  },
+  "evidence": {
+    "minPerDimension": 1,
+    "noEvidenceMaxScore": 60
+  },
+  "comment": {
+    "highlightMinLength": 10,
+    "suggestionMinLength": 10,
+    "tags": ["#架构优雅", "#交互丝滑", "#文档缺失", "#创意惊艳"]
+  },
+  "tiebreak": [
+    { "field": "report_quality", "order": "desc" },
+    { "field": "submit_time", "order": "asc" },
+    { "field": "team_name", "order": "asc" }
+  ],
+  "notes": [
+    "report_quality 的 3 个子项均为 0–10，sum_to_100 表示 0–30 换算到 0–100，换算口径待产品负责人确认",
+    "submit_speed 由系统确定性计算，Agent/教师均不可修改",
+    "peer_review 由 NO Push 算法（M4）实现，本 M0.5 POC 不涉及"
+  ]
+}

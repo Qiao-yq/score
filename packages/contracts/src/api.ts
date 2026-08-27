@@ -1,0 +1,28 @@
+/** 服务端错误码（与 M1-02 §3 一致） */
+export const ERROR_CODE = {
+  AUTH_REQUIRED: 'AUTH_REQUIRED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  SCORE_OUT_OF_RANGE: 'SCORE_OUT_OF_RANGE',
+  EVIDENCE_UNRESOLVED: 'EVIDENCE_UNRESOLVED',
+  CONFIDENCE_LOW: 'CONFIDENCE_LOW',
+  SUBMIT_LOCKED: 'SUBMIT_LOCKED',
+  DUPLICATE_SUBMIT: 'DUPLICATE_SUBMIT',
+  PEER_NOT_OPEN: 'PEER_NOT_OPEN',
+  PEER_SELF_MAPPING: 'PEER_SELF_MAPPING',
+  VERSION_CONFLICT: 'VERSION_CONFLICT',
+  RATE_LIMITED: 'RATE_LIMITED',
+  AGENT_FAILED: 'AGENT_FAILED',
+  INTERNAL: 'INTERNAL',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
+
+/** 统一错误响应体 */
+export interface ApiError {
+  code: ErrorCode | string;
+  message: string;
+  details?: unknown;
+  traceId?: string;
+}

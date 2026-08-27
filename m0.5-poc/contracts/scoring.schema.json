@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scoring.schema.json",
+  "title": "ScoringOutput",
+  "description": "评分 Agent 的不可变输出版本。每次评分生成新 scoreVersion，不覆盖历史结果（PRD 5.3）。",
+  "type": "object",
+  "required": [
+    "scoreVersion",
+    "rubricVersion",
+    "dimensions",
+    "submit_speed",
+    "modelVersion",
+    "promptVersion",
+    "generatedAt"
+  ],
+  "properties": {
+    "scoreVersion": {
+      "type": "string",
+      "description": "同一项目多次评分时递增，如 'v1'、'v2'"
+    },
+    "rubricVersion": {
+      "type": "string",
+      "description": "对应 config/rubric.json 的 rubricVersion"
+    },
+    "inputVersion": {
+      "type": "string",
+      "description": "输入资料版本，如 'proj-01@2026-08-26T09:00:00Z'"
+    },
+    "dimensions": {
+      "type": "object",
+      "required": [
+        "report_quality",
+        "interaction_visual",
+        "function_experience",
+        "tech_performance",
+        "presentation"
+      ],
+      "properties": {
+        "report_quality": { "$ref": "#/$defs/dimensionScore" },
+        "interaction_visual": { "$ref": "#/$defs/dimensionScore" },
+        "function_experience": { "$ref": "#/$defs/dimensionScore" },
+        "tech_performance": { "$ref": "#/$defs/dimensionScore" },
+        "presentation": { "$ref": "#/$defs/dimensionScore" }
+      },
+      "additionalProperties": true
+    },
+    "submit_speed": {
+      "type": "object",
+      "required": ["score", "source"],
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "source": { "const": "system" }
+      },
+      "description": "提交速度由系统确定性计算，Agent/教师不可修改"
+    },
+    "riskFlags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "如 ['unresolved_evidence', 'low_confidence', 'material_unavailable']"
+    },
+    "modelVersion": { "type": "string" },
+    "promptVersion": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "dimensionScore": {
+      "type": "object",
+      "required": ["score", "confidence", "evidenceIds", "highlight", "suggestion"],
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidenceIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "必须引用 evidence store 中已存在的 evidenceId；引用缺失则标记 unresolved_evidence"
+        },
+        "highlight": { "type": "string", "minLength": 10 },
+        "suggestion": { "type": "string", "minLength": 10 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TASK 考核系统 · Cyberpunk Design System</title>
+<style>
+  /* ============ Design Tokens ============ */
+  :root {
+    --bg-void: #0a0a0f;
+    --bg-deep: #120c24;
+    --bg-elevated: rgba(18, 12, 36, 0.62);
+
+    --accent-cyan: #00f3ff;
+    --accent-pink: #ff00aa;
+    --accent-yellow: #fcee0a;
+
+    --text-hi: #f5f7ff;
+    --text-base: #c6cbe8;
+    --text-dim: #6d7399;
+
+    --success: #00ff9f;
+    --danger: #ff2d55;
+
+    --font-display: 'Orbitron', 'Rajdhani', monospace;
+    --font-body: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+    --glow-cyan: 0 0 8px rgba(0,243,255,.55), 0 0 24px rgba(0,243,255,.22);
+    --glow-pink: 0 0 8px rgba(255,0,170,.55), 0 0 24px rgba(255,0,170,.22);
+    --glow-yellow: 0 0 8px rgba(252,238,10,.55), 0 0 24px rgba(252,238,10,.22);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-void);
+    color: var(--text-base);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(0,243,255,.06), transparent 60%),
+      radial-gradient(1000px 500px at 0% 110%, rgba(255,0,170,.06), transparent 60%);
+  }
+
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* ============ Utilities ============ */
+  .clip-corner { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); }
+  .glass { background: var(--bg-elevated); backdrop-filter: blur(8px); }
+  .text-glow { text-shadow: 0 0 6px currentColor, 0 0 18px currentColor; }
+  .mono { font-family: var(--font-mono); }
+  .display { font-family: var(--font-display); }
+
+  /* ============ Header ============ */
+  header {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    padding: 20px 24px; margin-bottom: 28px;
+    border: 1px solid rgba(0,243,255,.35); background: var(--bg-elevated); backdrop-filter: blur(8px);
+  }
+  .brand { font-family: var(--font-display); color: var(--text-hi); letter-spacing: .14em; font-size: 20px; }
+  .brand .accent { color: var(--accent-cyan); text-shadow: var(--glow-cyan); }
+  .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+  .toggle {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; cursor: pointer;
+    color: var(--text-base); border: 1px solid rgba(0,243,255,.3); background: transparent;
+    padding: 6px 12px; transition: all .2s ease;
+  }
+  .toggle:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+  .toggle.on { color: var(--accent-cyan); border-color: var(--accent-cyan); box-shadow: var(--glow-cyan); }
+
+  /* ============ Section ============ */
+  section { margin: 40px 0; }
+  h2 {
+    font-family: var(--font-display); color: var(--text-hi); letter-spacing: .1em; font-size: 16px;
+    margin: 0 0 16px; padding-left: 12px; border-left: 3px solid var(--accent-cyan);
+  }
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+  .panel {
+    border: 1px solid rgba(0,243,255,.28); background: var(--bg-elevated); backdrop-filter: blur(8px);
+    padding: 18px; position: relative;
+  }
+  .panel::before, .panel::after {
+    content: ''; position: absolute; width: 10px; height: 10px; border-color: var(--accent-cyan);
+  }
+  .panel::before { top: -1px; left: -1px; border-top: 2px solid var(--accent-cyan); border-left: 2px solid var(--accent-cyan); }
+  .panel::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent-cyan); border-right: 2px solid var(--accent-cyan); }
+  .panel h3 { font-family: var(--font-display); color: var(--text-hi); font-size: 14px; letter-spacing: .08em; margin: 0 0 12px; }
+
+  /* ============ Color swatches ============ */
+  .swatch { border: 1px solid rgba(255,255,255,.08); overflow: hidden; }
+  .swatch .chip { height: 64px; }
+  .swatch .meta { padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; }
+  .swatch .meta b { color: var(--text-hi); display: block; font-weight: 600; }
+
+  /* ============ Buttons ============ */
+  .btn {
+    position: relative; overflow: hidden; cursor: pointer; font-family: var(--font-display);
+    letter-spacing: .14em; text-transform: uppercase; font-size: 13px; padding: 12px 22px;
+    border: none; color: #0a0a0f; transition: transform .1s ease; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .btn:active { transform: scale(.97); }
+  .btn .sweep {
+    position: absolute; inset: 0; transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.4) 50%, transparent 70%);
+    transition: transform .5s ease;
+  }
+  .btn:hover .sweep { transform: translateX(120%); }
+  .btn:hover { animation: glitch .3s steps(2) infinite; }
+  .btn-primary { background: var(--accent-cyan); box-shadow: var(--glow-cyan); }
+  .btn-danger  { background: var(--accent-pink); box-shadow: var(--glow-pink); }
+  .btn-warning { background: var(--accent-yellow); box-shadow: var(--glow-yellow); }
+  .btn-ghost   { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn:disabled:hover { animation: none; }
+
+  @keyframes glitch {
+    0% { transform: translate(0); } 25% { transform: translate(-1px, 1px); }
+    50% { transform: translate(1px, -1px); } 75% { transform: translate(-1px, 0); }
+    100% { transform: translate(0); }
+  }
+
+  /* ============ Slider ============ */
+  .slider-row { margin: 16px 0; }
+  .slider-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .slider-head label { color: var(--text-hi); letter-spacing: .1em; font-size: 13px; }
+  .slider-head .val { font-family: var(--font-display); font-size: 22px; color: var(--accent-cyan); text-shadow: var(--glow-cyan); }
+  input[type=range] {
+    appearance: none; width: 100%; height: 5px; border-radius: 2px; outline: none; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent-cyan) 0%, #1a1633 0%);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none; width: 18px; height: 18px; background: #0a0a0f;
+    border: 2px solid var(--accent-cyan); border-radius: 2px; box-shadow: var(--glow-cyan); cursor: grab;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; background: #0a0a0f; border: 2px solid var(--accent-cyan);
+    border-radius: 2px; box-shadow: var(--glow-cyan); cursor: grab;
+  }
+  .slider-row.pink input[type=range]::-webkit-slider-thumb { border-color: var(--accent-pink); box-shadow: var(--glow-pink); }
+  .slider-row.pink input[type=range] { background: linear-gradient(90deg, var(--accent-pink) 0%, #1a1633 0%); }
+  .slider-row.pink .val { color: var(--accent-pink); text-shadow: var(--glow-pink); }
+
+  /* ============ Tags ============ */
+  .tag {
+    display: inline-block; cursor: pointer; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em;
+    padding: 5px 12px; color: var(--accent-cyan); border: 1px solid rgba(0,243,255,.4);
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    transition: all .15s ease; margin: 4px 6px 4px 0;
+  }
+  .tag:hover { background: rgba(0,243,255,.12); box-shadow: var(--glow-cyan); }
+  .tag.active { background: var(--accent-cyan); color: #0a0a0f; }
+
+  /* ============ Connection status ============ */
+  .conn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; }
+  .conn .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .conn.synced .dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: breath 2s ease-in-out infinite; }
+  .conn.synced { color: var(--success); }
+  .conn.offline .dot { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  .conn.offline { color: var(--danger); }
+  @keyframes breath { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* ============ Score card ============ */
+  .score-card .row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+  .score-card .row:last-child { border-bottom: none; }
+  .score-card .dim { color: var(--text-base); letter-spacing: .05em; font-size: 14px; }
+  .score-card .num { font-family: var(--font-display); font-size: 20px; color: var(--text-hi); }
+  .conf-low { color: var(--accent-pink); font-family: var(--font-mono); font-size: 11px; }
+  .conf-ok { color: var(--success); font-family: var(--font-mono); font-size: 11px; }
+
+  /* ============ Inputs ============ */
+  .neon-input, .neon-textarea {
+    width: 100%; background: rgba(10,10,15,.6); border: 1px solid rgba(0,243,255,.3); color: var(--text-hi);
+    font-family: var(--font-body); padding: 10px 12px; outline: none; transition: all .2s ease; resize: vertical;
+  }
+  .neon-input:focus, .neon-textarea:focus { border-color: var(--accent-cyan); box-shadow: var(--glow-cyan); }
+  label.field { display: block; font-size: 12px; letter-spacing: .1em; color: var(--text-dim); margin: 12px 0 6px; text-transform: uppercase; }
+
+  /* ============ Visibility selector ============ */
+  .vis-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .vis-opt {
+    font-family: var(--font-mono); font-size: 12px; cursor: pointer; padding: 8px 14px;
+    color: var(--text-base); border: 1px solid rgba(255,255,255,.15); background: transparent; transition: all .15s ease;
+  }
+  .vis-opt:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+  .vis-opt.active { color: var(--accent-yellow); border-color: var(--accent-yellow); box-shadow: var(--glow-yellow); }
+
+  /* ============ Dashboard mock ============ */
+  .podium { display: flex; align-items: flex-end; gap: 18px; justify-content: center; }
+  .podium .p {
+    text-align: center; padding: 20px 16px; width: 140px; border: 1px solid rgba(0,243,255,.3);
+    background: var(--bg-elevated); backdrop-filter: blur(8px); clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  .podium .p.gold { border-color: var(--accent-yellow); box-shadow: var(--glow-yellow); }
+  .podium .rank { font-family: var(--font-display); font-size: 42px; color: var(--accent-cyan); text-shadow: var(--glow-cyan); }
+  .podium .gold .rank { color: var(--accent-yellow); text-shadow: var(--glow-yellow); }
+  .podium .team { font-family: var(--font-display); color: var(--text-hi); margin-top: 6px; letter-spacing: .05em; }
+  .podium .score { font-family: var(--font-mono); font-size: 22px; color: var(--accent-pink); text-shadow: var(--glow-pink); margin-top: 4px; }
+
+  .progress-line { height: 8px; background: #1a1633; border-radius: 2px; overflow: hidden; margin: 8px 0; }
+  .progress-line .fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink)); box-shadow: var(--glow-cyan); width: 0; transition: width .6s ease; }
+
+  .ticker { overflow: hidden; white-space: nowrap; font-family: var(--font-mono); font-size: 13px; color: var(--text-base); }
+  .ticker span { display: inline-block; padding-left: 100%; animation: marquee 16s linear infinite; }
+  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+  /* ============ CRT overlay ============ */
+  .crt {
+    position: fixed; inset: 0; pointer-events: none; z-index: 999; display: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px);
+    mix-blend-mode: overlay;
+  }
+  .crt.on { display: block; }
+  .scanbar {
+    position: fixed; left: 0; right: 0; height: 120px; pointer-events: none; z-index: 998; display: none;
+    background: linear-gradient(180deg, transparent, rgba(0,243,255,.05), transparent);
+    animation: scan 5s linear infinite;
+  }
+  .scanbar.on { display: block; }
+  @keyframes scan { 0% { top: -120px; } 100% { top: 100%; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn:hover { animation: none; }
+    .conn.synced .dot { animation: none; }
+    .ticker span, .scanbar { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="crt" id="crt"></div>
+  <div class="scanbar" id="scanbar"></div>
+
+  <div class="wrap">
+    <header>
+      <div class="brand">TASK<span class="accent">//</span>评分系统 <span style="font-size:12px;color:var(--text-dim);letter-spacing:.1em">DESIGN SYSTEM v1.0</span></div>
+      <div class="controls">
+        <span class="conn synced" id="conn"><span class="dot"></span>已同步</span>
+        <button class="toggle" id="tglCrt">CRT 扫描线</button>
+        <button class="toggle" id="tglScan">扫描光</button>
+      </div>
+    </header>
+
+    <!-- ============ Colors ============ -->
+    <section>
+      <h2>01 · 色彩 TOKEN</h2>
+      <div class="grid cols-4">
+        <div class="swatch"><div class="chip" style="background:#0a0a0f"></div><div class="meta"><b>bg-void</b>#0a0a0f</div></div>
+        <div class="swatch"><div class="chip" style="background:#120c24"></div><div class="meta"><b>bg-deep</b>#120c24</div></div>
+        <div class="swatch"><div class="chip" style="background:#00f3ff"></div><div class="meta"><b>accent-cyan</b>#00f3ff</div></div>
+        <div class="swatch"><div class="chip" style="background:#ff00aa"></div><div class="meta"><b>accent-pink</b>#ff00aa</div></div>
+        <div class="swatch"><div class="chip" style="background:#fcee0a"></div><div class="meta"><b>accent-yellow</b>#fcee0a</div></div>
+        <div class="swatch"><div class="chip" style="background:#00ff9f"></div><div class="meta"><b>success</b>#00ff9f</div></div>
+        <div class="swatch"><div class="chip" style="background:#ff2d55"></div><div class="meta"><b>danger</b>#ff2d55</div></div>
+        <div class="swatch"><div class="chip" style="background:#c6cbe8"></div><div class="meta"><b>text-base</b>#c6cbe8</div></div>
+      </div>
+    </section>
+
+    <!-- ============ Buttons ============ -->
+    <section>
+      <h2>02 · GLITCH 按钮</h2>
+      <div class="panel">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-primary"><span class="sweep"></span>提交评分</button>
+          <button class="btn btn-danger"><span class="sweep"></span>标记异常</button>
+          <button class="btn btn-warning"><span class="sweep"></span>待复核</button>
+          <button class="btn btn-ghost"><span class="sweep"></span>取消</button>
+          <button class="btn btn-primary" disabled><span class="sweep"></span>已锁定</button>
+        </div>
+        <p class="mono" style="font-size:12px;color:var(--text-dim);margin-top:14px">hover 触发 glitch 抖动 + 光扫过；disabled 关闭动效；reduced-motion 自动降级</p>
+      </div>
+    </section>
+
+    <!-- ============ Slider ============ -->
+    <section>
+      <h2>03 · 霓虹评分滑块</h2>
+      <div class="grid cols-2">
+        <div class="panel">
+          <h3>报告质量（权重 30%）</h3>
+          <div class="slider-row">
+            <div class="slider-head"><label>Agent 原始分</label><span class="val" id="s1v">85</span></div>
+            <input type="range" min="0" max="100" value="85" id="s1" />
+          </div>
+          <div class="slider-row pink">
+            <div class="slider-head"><label>教师改分</label><span class="val" id="s2v">88</span></div>
+            <input type="range" min="0" max="100" value="88" id="s2" />
+          </div>
+        </div>
+        <div class="panel">
+          <h3>评分维度面板（样例）</h3>
+          <div class="score-card">
+            <div class="row"><span class="dim">报告质量</span><span class="num">85</span></div>
+            <div class="row"><span class="dim">交互视觉</span><span class="num">78</span></div>
+            <div class="row"><span class="dim">功能体验</span><span class="num">72</span></div>
+            <div class="row"><span class="dim">技术性能</span><span class="num">90</span></div>
+            <div class="row"><span class="dim">演示效果</span><span class="num">81</span></div>
+            <div class="row"><span class="dim">提交速度</span><span class="num">100 <span style="font-size:11px;color:var(--text-dim)">系统</span></span></div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:16px">
+            <span class="conf-ok">置信度 0.82</span>
+            <span class="conf-low">置信度 0.64 · 需复核</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Tags + Visibility ============ -->
+    <section>
+      <h2>04 · 快捷标签 &amp; 评语可见性</h2>
+      <div class="grid cols-2">
+        <div class="panel">
+          <h3>预置标签</h3>
+          <div>
+            <span class="tag active">#架构优雅</span>
+            <span class="tag">#交互丝滑</span>
+            <span class="tag">#文档缺失</span>
+            <span class="tag">#创意惊艳</span>
+          </div>
+          <label class="field">亮点（≥10 字）</label>
+          <textarea class="neon-textarea" rows="2" placeholder="填写该维度亮点…">架构分层清晰，前后端解耦合理</textarea>
+          <label class="field">改进建议（≥10 字）</label>
+          <textarea class="neon-textarea" rows="2" placeholder="填写改进建议…">补充异常场景与失败回滚说明</textarea>
+        </div>
+        <div class="panel">
+          <h3>可见性（三选一）</h3>
+          <div class="vis-group">
+            <button class="vis-opt active">仅队长可见</button>
+            <button class="vis-opt">全员可见</button>
+            <button class="vis-opt">公示到大屏</button>
+          </div>
+          <label class="field">输入框示例</label>
+          <input class="neon-input" placeholder="团队名称 / 项目名称" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Dashboard mock ============ -->
+    <section>
+      <h2>05 · 大屏组件预览</h2>
+      <div class="panel">
+        <div class="podium">
+          <div class="p">
+            <div class="rank">2</div><div class="team">NEON-02</div><div class="score">86.4</div>
+          </div>
+          <div class="p gold">
+            <div class="rank">1</div><div class="team">CYBER-01</div><div class="score">92.7</div>
+          </div>
+          <div class="p">
+            <div class="rank">3</div><div class="team">GLITCH-03</div><div class="score">80.1</div>
+          </div>
+        </div>
+        <div style="margin-top:22px">
+          <div style="display:flex;justify-content:space-between" class="mono"><span style="font-size:12px;color:var(--text-dim)">评分进度</span><span style="font-size:12px;color:var(--accent-cyan)">12 / 20 已评</span></div>
+          <div class="progress-line"><div class="fill" id="fill" style="width:60%"></div></div>
+        </div>
+        <div class="ticker" style="margin-top:18px;border-top:1px dashed rgba(255,255,255,.1);padding-top:12px">
+          <span>【最新公示】CYBER-01 · 架构优雅，交互丝滑 —— NEON-02 · 文档缺失需补充 —— GLITCH-03 · 创意惊艳，性能优异 ······</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mono" style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:40px">
+      M1 设计系统原型 · React 18 + Tailwind 落地映射见 M1-03 / M1-07 · 色彩/发光/动效分级可复现
+    </footer>
+  </div>
+
+  <script>
+    // 滑块实时联动
+    function bindSlider(id, vid) {
+      const s = document.getElementById(id), v = document.getElementById(vid);
+      const update = () => { v.textContent = s.value; s.style.background = 'linear-gradient(90deg, currentColor ' + s.value + '%, #1a1633 ' + s.value + '%)'; };
+      // 用 accent 色做进度填充
+      s.addEventListener('input', () => { v.textContent = s.value; paint(s); });
+      paint(s);
+      function paint(el) {
+        const c = el.closest('.slider-row').classList.contains('pink') ? '#ff00aa' : '#00f3ff';
+        el.style.background = 'linear-gradient(90deg, ' + c + ' ' + el.value + '%, #1a1633 ' + el.value + '%)';
+      }
+    }
+    bindSlider('s1', 's1v');
+    bindSlider('s2', 's2v');
+
+    // 标签点击切换
+    document.querySelectorAll('.tag').forEach(t => t.addEventListener('click', () => t.classList.toggle('active')));
+
+    // 可见性单选
+    document.querySelectorAll('.vis-opt').forEach(o => o.addEventListener('click', () => {
+      document.querySelectorAll('.vis-opt').forEach(x => x.classList.remove('active'));
+      o.classList.add('active');
+    }));
+
+    // CRT / 扫描线开关
+    const crt = document.getElementById('crt'), scan = document.getElementById('scanbar');
+    document.getElementById('tglCrt').addEventListener('click', function(){
+      crt.classList.toggle('on'); this.classList.toggle('on');
+    });
+    document.getElementById('tglScan').addEventListener('click', function(){
+      scan.classList.toggle('on'); this.classList.toggle('on');
+    });
+
+    // 连接状态演示：点击切换
+    const conn = document.getElementById('conn');
+    conn.addEventListener('click', () => {
+      conn.classList.toggle('synced'); conn.classList.toggle('offline');
+      conn.lastChild.textContent = conn.classList.contains('synced') ? '已同步' : '连接中断';
+    });
+  </script>
+</body>
+</html>

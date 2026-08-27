@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #0a0a0f;
+  color: #c6cbe8;
+  font-family: 'Rajdhani', ui-sans-serif, system-ui, sans-serif;
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, rgba(0, 243, 255, 0.06), transparent 60%),
+    radial-gradient(1000px 500px at 0% 110%, rgba(255, 0, 170, 0.06), transparent 60%);
+}
+
+/* ===== @task/ui 组件配套样式（NeonSlider / GlitchButton） ===== */
+.neon-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #0a0a0f;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  box-shadow: 0 0 8px currentColor;
+  cursor: grab;
+}
+.neon-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #0a0a0f;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  box-shadow: 0 0 8px currentColor;
+  cursor: grab;
+}
+
+.glitch-btn {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.glitch-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.5s ease;
+}
+.glitch-btn:hover .glitch-sweep {
+  transform: translateX(120%);
+}
+.glitch-btn:hover {
+  animation: glitch-shift 0.3s steps(2) infinite;
+}
+@keyframes glitch-shift {
+  0% { transform: translate(0); }
+  25% { transform: translate(-1px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  75% { transform: translate(-1px, 0); }
+  100% { transform: translate(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glitch-btn:hover { animation: none; }
+  .glitch-sweep { transition: none; }
+}

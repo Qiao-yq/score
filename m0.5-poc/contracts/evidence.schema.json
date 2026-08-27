@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evidence.schema.json",
+  "title": "Evidence",
+  "description": "评分证据记录。证据先编号入库，评分只能引用已存在的 evidenceId（防编造）。locator 字段随 materialType 变化，见 PRD 5.4。",
+  "type": "object",
+  "required": [
+    "evidenceId",
+    "competitionId",
+    "projectId",
+    "dimension",
+    "materialType",
+    "locator",
+    "extractedAt",
+    "status"
+  ],
+  "properties": {
+    "evidenceId": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,5}-[A-Z]+-\\d{3,}$",
+      "description": "全局唯一编号，如 DOC-REPORT-001、WEB-PROTOTYPE-002"
+    },
+    "competitionId": { "type": "string" },
+    "projectId": { "type": "string" },
+    "dimension": {
+      "type": "string",
+      "enum": [
+        "report_quality",
+        "interaction_visual",
+        "function_experience",
+        "tech_performance",
+        "presentation"
+      ],
+      "description": "Agent 需出分的 5 个维度（提交速度由系统计算，不产生证据）"
+    },
+    "materialType": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "docx",
+        "markdown",
+        "image",
+        "online_prototype",
+        "local_web",
+        "video",
+        "perf"
+      ]
+    },
+    "locator": { "$ref": "#/$defs/locator" },
+    "extractedAt": { "type": "string", "format": "date-time" },
+    "status": {
+      "type": "string",
+      "enum": ["available", "degraded", "unavailable"],
+      "description": "degraded/unavailable 时评分维度需标记风险或降级"
+    }
+  },
+  "$defs": {
+    "locator": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "定位信息。ref 为可选的人类可读单行定位串，便于教师 30 秒内定位。各 materialType 常用字段：文档用 file/page/section/paragraph；图片用 region/ocrText；在线原型用 url/route/steps/screenshot/a11yNode；本地 Web 用 path/steps/screenshot/consoleLog；视频用 startTs/endTs/transcript/keyframe；性能用 tool/env/metricName/reportLocator。",
+      "properties": {
+        "ref": { "type": "string" },
+        "file": { "type": "string" },
+        "page": { "type": "integer" },
+        "section": { "type": "string" },
+        "paragraph": { "type": "string" },
+        "region": { "type": "string", "description": "图片坐标，如 'x:100,y:200,w:300,h:150'" },
+        "ocrText": { "type": "string" },
+        "url": { "type": "string" },
+        "route": { "type": "string" },
+        "steps": { "type": "array", "items": { "type": "string" } },
+        "screenshot": { "type": "string" },
+        "a11yNode": { "type": "string" },
+        "consoleLog": { "type": "string" },
+        "path": { "type": "string" },
+        "startTs": { "type": "string" },
+        "endTs": { "type": "string" },
+        "transcript": { "type": "string" },
+        "keyframe": { "type": "string" },
+        "tool": { "type": "string" },
+        "env": { "type": "string" },
+        "metricName": { "type": "string" },
+        "reportLocator": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
