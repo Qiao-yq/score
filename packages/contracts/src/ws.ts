@@ -41,3 +41,6 @@ export interface AckPayload {
   clientMessageId: string;
   status: 'acked' | 'failed';
 }
+
+/** 广播可见范围（服务端按订阅者在该比赛内的角色过滤，PRD §7.2 / M1-02 §5.4） */
+export type WsScope = 'admin' | 'staff' | 'team' | 'public';
