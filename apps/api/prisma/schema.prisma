@@ -1,0 +1,335 @@
+// TASK 项目考核打分系统 —— Prisma Schema
+// 依据：M1-01 数据库 Schema 与 ER 图（16 张表，不可变版本 + 约束下沉）
+// 说明：枚举类字段（global_role/status/…）以 String + 应用层校验实现，
+//       对应 DDL 中的 CHECK 约束（PRD 要求服务端校验，M3 先落到 class-validator）。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1. 用户与角色
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique @db.VarChar(320)
+  name         String   @db.VarChar(50)
+  passwordHash String   @map("password_hash") @db.Text
+  globalRole   String   @map("global_role") @db.VarChar(20) // admin | teacher | audience
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  teamMembers         TeamMember[]
+  competitionTeachers CompetitionTeacher[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model CompetitionTeacher {
+  id            String @id @default(uuid()) @db.Uuid
+  competitionId String @map("competition_id") @db.Uuid
+  userId        String @map("user_id") @db.Uuid
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([competitionId, userId])
+  @@map("competition_teachers")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2. 比赛与团队
+// ─────────────────────────────────────────────────────────────
+
+model Competition {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String   @db.VarChar(100)
+  timezone           String   @default("Asia/Shanghai") @db.VarChar(64)
+  submitDeadline     DateTime @map("submit_deadline") @db.Timestamptz(6)
+  rubricVersion      String   @map("rubric_version") @db.VarChar(50)
+  peerReviewEnabled  Boolean  @default(true) @map("peer_review_enabled")
+  dashboardPublished Boolean  @default(false) @map("dashboard_published")
+  status             String   @default("draft") @db.VarChar(20) // draft | active | closed
+  createdBy          String?  @map("created_by") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  teams               Team[]
+  teachers            CompetitionTeacher[]
+  peerReviewMappings  PeerReviewMapping[]
+  peerReviews         PeerReview[]
+  evidence            Evidence[]
+  outboxEvents        EventOutbox[]
+
+  @@map("competitions")
+}
+
+model Team {
+  id                 String    @id @default(uuid()) @db.Uuid
+  competitionId      String    @map("competition_id") @db.Uuid
+  name               String    @db.VarChar(50)
+  projectName        String    @map("project_name") @db.VarChar(100)
+  projectDescription String?   @map("project_description") @db.Text
+  reportUrl          String?   @map("report_url") @db.Text
+  prototypeUrl       String?   @map("prototype_url") @db.Text
+  videoUrl           String?   @map("video_url") @db.Text
+  status             String    @default("draft") @db.VarChar(20) // draft | submitted | locked | published
+  submittedAt        DateTime? @map("submitted_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  competition Competition       @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  members     TeamMember[]
+  attachments Attachment[]
+  submissions TeamSubmission[]
+  evidence    Evidence[]
+  scores      Score[]
+  comments    Comment[]
+  peerReviewAsReviewer PeerReview[] @relation("PeerReviewReviewer")
+  peerReviewAsTarget   PeerReview[] @relation("PeerReviewTarget")
+
+  @@unique([competitionId, name])
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String @id @default(uuid()) @db.Uuid
+  teamId String @map("team_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  role   String @db.VarChar(20) // captain | member
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. 附件与提交版本
+// ─────────────────────────────────────────────────────────────
+
+model Attachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  teamId       String   @map("team_id") @db.Uuid
+  type         String   @db.VarChar(20) // report | prototype | video | image | other
+  objectKey    String   @map("object_key") @db.Text
+  fileName     String   @map("file_name") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int      @map("size_bytes") // ≤ 209715200（200MB，int4 足够，避免 BigInt 序列化问题）
+  version      Int      @default(1)
+  accessStatus String   @default("available") @map("access_status") @db.VarChar(20)
+  uploadedAt   DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  createdBy    String?  @map("created_by") @db.Uuid
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model TeamSubmission {
+  id           String   @id @default(uuid()) @db.Uuid
+  teamId       String   @map("team_id") @db.Uuid
+  version      Int
+  snapshot     Json     @db.Json
+  submittedAt  DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  unlockedBy   String?  @map("unlocked_by") @db.Uuid
+  unlockReason String?  @map("unlock_reason") @db.Text
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, version])
+  @@map("team_submissions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. 证据
+// ─────────────────────────────────────────────────────────────
+
+model Evidence {
+  id            String   @id @default(uuid()) @db.Uuid
+  evidenceId    String   @unique @map("evidence_id") @db.VarChar(50)
+  competitionId String   @map("competition_id") @db.Uuid
+  teamId        String   @map("team_id") @db.Uuid
+  dimension     String   @db.VarChar(40)
+  materialType  String   @map("material_type") @db.VarChar(30) // pdf | docx | markdown | image | online_prototype | local_web | video | perf
+  locator       Json     @db.Json
+  extractedAt   DateTime @default(now()) @map("extracted_at") @db.Timestamptz(6)
+  status        String   @default("available") @db.VarChar(20)
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("evidence")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. 评分（不可变版本 + 合成公式）
+// ─────────────────────────────────────────────────────────────
+
+model Score {
+  id               String    @id @default(uuid()) @db.Uuid
+  teamId           String    @map("team_id") @db.Uuid
+  scoreVersion     String    @map("score_version") @db.VarChar(20) // v1/v2/…
+  rubricVersion    String    @map("rubric_version") @db.VarChar(50)
+  inputVersion     String    @map("input_version") @db.VarChar(80)
+  finalScore       Decimal?  @map("final_score") @db.Decimal(5, 1)
+  peerReviewScore  Decimal?  @map("peer_review_score") @db.Decimal(3, 1)
+  status           String    @default("agent_scored") @db.VarChar(20) // not_started | processing | agent_scored | needs_review | approved | published
+  riskFlags        Json      @default("[]") @map("risk_flags") @db.Json
+  modelVersion     String?   @map("model_version") @db.VarChar(50)
+  promptVersion    String?   @map("prompt_version") @db.VarChar(20)
+  generatedAt      DateTime  @default(now()) @map("generated_at") @db.Timestamptz(6)
+  createdBy        String?   @map("created_by") @db.Uuid
+  approvedBy       String?   @map("approved_by") @db.Uuid
+  approvedAt       DateTime? @map("approved_at") @db.Timestamptz(6)
+
+  team       Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  dimensions ScoreDimension[]
+
+  @@unique([teamId, scoreVersion])
+  @@map("scores")
+}
+
+model ScoreDimension {
+  id              String   @id @default(uuid()) @db.Uuid
+  scoreId         String   @map("score_id") @db.Uuid
+  dimensionKey    String   @map("dimension_key") @db.VarChar(40)
+  agentScore      Int?     @map("agent_score")
+  agentConfidence Decimal? @map("agent_confidence") @db.Decimal(3, 2)
+  agentEvidence   Json     @default("[]") @map("agent_evidence") @db.Json
+  subScores       Json?    @map("sub_scores") @db.Json // 报告质量等维度的子项分（数据驱动，键来自 rubrics.subs）
+  highlight       String?  @db.Text
+  suggestion      String?  @db.Text
+  teacherScore    Int?     @map("teacher_score")
+  teacherAction   String?  @map("teacher_action") @db.VarChar(20) // approve | suggest_modify | insufficient
+  teacherReason   String?  @map("teacher_reason") @db.Text
+  compositeScore  Decimal? @map("composite_score") @db.Decimal(5, 2)
+
+  score Score @relation(fields: [scoreId], references: [id], onDelete: Cascade)
+
+  @@unique([scoreId, dimensionKey])
+  @@map("score_dimensions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. 评语（可见性 + 版本）
+// ─────────────────────────────────────────────────────────────
+
+model Comment {
+  id            String   @id @default(uuid()) @db.Uuid
+  teamId        String   @map("team_id") @db.Uuid
+  dimensionKey  String   @map("dimension_key") @db.VarChar(40)
+  scoreVersion  String   @map("score_version") @db.VarChar(20)
+  highlight     String   @db.Text
+  suggestion    String   @db.Text
+  tags          Json     @default("[]") @db.Json
+  visibility    String   @default("captain") @db.VarChar(20) // captain | all | dashboard
+  source        String   @default("agent") @db.VarChar(20) // agent | teacher | manual_fallback
+  createdBy     String?  @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. 互评映射与评分（NO Push，M4 实现，M3 仅落表）
+// ─────────────────────────────────────────────────────────────
+
+model PeerReviewMapping {
+  id               String   @id @default(uuid()) @db.Uuid
+  competitionId    String   @map("competition_id") @db.Uuid
+  algorithmVersion String   @map("algorithm_version") @db.VarChar(20)
+  mapping          Json     @db.Json // [{reviewer_team, target_team}, …]
+  status           String   @default("active") @db.VarChar(20)
+  createdBy        String?  @map("created_by") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  reviews     PeerReview[]
+
+  @@map("peer_review_mappings")
+}
+
+model PeerReview {
+  id             String   @id @default(uuid()) @db.Uuid
+  competitionId  String   @map("competition_id") @db.Uuid
+  mappingId      String   @map("mapping_id") @db.Uuid
+  reviewerTeamId String   @map("reviewer_team_id") @db.Uuid
+  targetTeamId   String   @map("target_team_id") @db.Uuid
+  score          Int?
+  status         String   @default("submitted") @db.VarChar(20) // submitted | suspicious | valid | invalid
+  anomalyReasons Json     @default("[]") @map("anomaly_reasons") @db.Json
+  submittedBy    String?  @map("submitted_by") @db.Uuid
+  submittedAt    DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
+
+  competition   Competition       @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  mapping       PeerReviewMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+  reviewerTeam  Team              @relation("PeerReviewReviewer", fields: [reviewerTeamId], references: [id], onDelete: Cascade)
+  targetTeam    Team              @relation("PeerReviewTarget", fields: [targetTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([mappingId, reviewerTeamId])
+  @@map("peer_reviews")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. 审计与消息队列
+// ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(80)
+  entityType String   @map("entity_type") @db.VarChar(40)
+  entityId   String?  @map("entity_id") @db.Uuid
+  before     Json?
+  after      Json?
+  reason     String?  @db.Text
+  ip         String?  @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model EventOutbox {
+  id            String   @id @default(uuid()) @db.Uuid
+  messageId     String   @unique @map("message_id") @db.VarChar(64)
+  competitionId String   @map("competition_id") @db.Uuid
+  event         String   @db.VarChar(80)
+  entityId      String?  @map("entity_id") @db.Uuid
+  entityVersion Int?     @map("entity_version")
+  actorId       String?  @map("actor_id") @db.Uuid
+  payload       Json     @default("{}") @db.Json
+  serverTime    DateTime @default(now()) @map("server_time") @db.Timestamptz(6)
+  ackStatus     String   @default("pending") @map("ack_status") @db.VarChar(20) // pending | acked | failed
+  retryCount    Int      @default(0) @map("retry_count")
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@index([serverTime])
+  @@map("event_outbox")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. 评分标准（数据驱动，不硬编码）
+// ─────────────────────────────────────────────────────────────
+
+model Rubric {
+  id            String   @id @default(uuid()) @db.Uuid
+  rubricVersion String   @unique @map("rubric_version") @db.VarChar(50)
+  definition    Json     @db.Json
+  calibrated    Boolean  @default(false)
+  createdBy     String?  @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("rubrics")
+}
