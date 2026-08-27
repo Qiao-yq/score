@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type {
   ProgressResponse,
   RadarResponse,
@@ -187,6 +187,12 @@ export default function DashboardPage() {
         <span className="font-mono text-xs text-dim">
           {wsStatus === 'connected' ? '实时已连接' : wsStatus === 'connecting' ? '连接中…' : '离线'}
         </span>
+        <Link
+          to="/competitions"
+          className="border border-cyan/30 px-2 py-1 font-mono text-xs text-hi hover:border-cyan"
+        >
+          返回比赛
+        </Link>
         <button
           type="button"
           onClick={cycleMotion}
