@@ -16,6 +16,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { ScoringModule } from './scoring/scoring.module';
 import { TeamModule } from './team/team.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TeamModule } from './team/team.module';
     AuditModule,
     CompetitionModule,
     TeamModule,
+    UsersModule,
     ScoringModule,
     CommentModule,
     PeerReviewModule,
