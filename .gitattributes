@@ -1,0 +1,10 @@
+# 统一换行为 LF（跨 Windows/Linux 一致，便于迁移部署）
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
