@@ -39,12 +39,24 @@ body {
 }
 
 .glitch-btn {
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  clip-path: polygon(
+    0 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% 100%,
+    10px 100%,
+    0 calc(100% - 10px)
+  );
 }
 .glitch-sweep {
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
   transform: translateX(-120%);
   transition: transform 0.5s ease;
 }
@@ -55,13 +67,142 @@ body {
   animation: glitch-shift 0.3s steps(2) infinite;
 }
 @keyframes glitch-shift {
-  0% { transform: translate(0); }
-  25% { transform: translate(-1px, 1px); }
-  50% { transform: translate(1px, -1px); }
-  75% { transform: translate(-1px, 0); }
-  100% { transform: translate(0); }
+  0% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-1px, 1px);
+  }
+  50% {
+    transform: translate(1px, -1px);
+  }
+  75% {
+    transform: translate(-1px, 0);
+  }
+  100% {
+    transform: translate(0);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .glitch-btn:hover { animation: none; }
-  .glitch-sweep { transition: none; }
+  .glitch-btn:hover {
+    animation: none;
+  }
+  .glitch-sweep {
+    transition: none;
+  }
+}
+
+/* ===== M5 大屏：CRT 扫描线 + 暗角（覆盖层） ===== */
+.crt-overlay {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.2) 0px,
+    rgba(0, 0, 0, 0.2) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+.crt-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* ===== 故障字（红青双影错位） ===== */
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.glitch-text::before {
+  color: #ff00aa;
+  transform: translate(-2px, 0);
+  clip-path: inset(0 0 55% 0);
+  animation: glitch-b 2.4s infinite linear alternate;
+  opacity: 0.7;
+}
+.glitch-text::after {
+  color: #00f3ff;
+  transform: translate(2px, 0);
+  clip-path: inset(55% 0 0 0);
+  animation: glitch-a 3.1s infinite linear alternate;
+  opacity: 0.7;
+}
+@keyframes glitch-a {
+  0% {
+    clip-path: inset(0 0 85% 0);
+  }
+  20% {
+    clip-path: inset(40% 0 40% 0);
+  }
+  40% {
+    clip-path: inset(70% 0 10% 0);
+  }
+  60% {
+    clip-path: inset(20% 0 60% 0);
+  }
+  80% {
+    clip-path: inset(55% 0 25% 0);
+  }
+  100% {
+    clip-path: inset(0 0 85% 0);
+  }
+}
+@keyframes glitch-b {
+  0% {
+    clip-path: inset(10% 0 70% 0);
+  }
+  20% {
+    clip-path: inset(60% 0 20% 0);
+  }
+  40% {
+    clip-path: inset(30% 0 50% 0);
+  }
+  60% {
+    clip-path: inset(80% 0 5% 0);
+  }
+  80% {
+    clip-path: inset(45% 0 35% 0);
+  }
+  100% {
+    clip-path: inset(10% 0 70% 0);
+  }
+}
+
+/* ===== 跑马灯 ===== */
+.ticker-track {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: ticker-scroll 36s linear infinite;
+}
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-text::before,
+  .glitch-text::after {
+    animation: none;
+    opacity: 0.3;
+  }
+  .ticker-track {
+    animation: none;
+  }
 }
