@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "TASK 项目考核打分系统 monorepo（React 18 + NestJS）",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=20",
     "npm": ">=10"
@@ -11,7 +14,7 @@
   "scripts": {
     "dev:web": "npm run dev -w @task/web",
     "dev:api": "npm run start:dev -w @task/api",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @task/contracts && npm run build -w @task/ui && npm run build -w @task/api && npm run build -w @task/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
