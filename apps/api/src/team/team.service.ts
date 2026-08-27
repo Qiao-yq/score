@@ -116,6 +116,9 @@ export class TeamService {
     const team = await this.requireTeam(teamId);
     await this.assertCaptain(user, team);
 
+    const target = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    if (!target) validationError('用户不存在');
+
     const existing = await this.prisma.teamMember.findFirst({
       where: { userId: dto.userId, team: { competitionId: team.competitionId } },
     });

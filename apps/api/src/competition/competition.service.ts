@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AccessService } from '../access/access.service';
 import { AuditService } from '../audit/audit.service';
-import { forbidden, notFound } from '../common/errors';
+import { forbidden, notFound, validationError } from '../common/errors';
 import type { AuthUser } from '../common/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { POC_RUBRIC_VERSION } from '../scoring/rubric-defaults';
@@ -88,6 +88,8 @@ export class CompetitionService {
   async assignTeacher(user: AuthUser, id: string, dto: AssignTeacherDto) {
     if (!this.access.isAdmin(user)) forbidden();
     await this.ensureCompetition(id);
+    const target = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    if (!target) validationError('用户不存在');
     const link = await this.prisma.competitionTeacher.upsert({
       where: { competitionId_userId: { competitionId: id, userId: dto.userId } },
       create: { competitionId: id, userId: dto.userId },
